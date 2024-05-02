@@ -9,8 +9,8 @@ class WebCrawlerSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         self.seed_file_name = str(kwargs.get("SEED_FILE_NAME", ""))
-        self.num_pages = int(kwargs.get("NUM_PAGES", 0))
-        self.hops_away = int(kwargs.get("HOPS_AWAY", 0))
+        self.max_num_pages = int(kwargs.get("MAX_NUM_PAGES", 0))
+        self.max_hops_away = int(kwargs.get("MAX_HOPS_AWAY", 0))
         self.output_dir_name = str(kwargs.get("OUTPUT_DIR_NAME", "scraped_html_pages"))
         self.html_pages_count = 0
         self.visited_urls = set()
@@ -25,10 +25,15 @@ class WebCrawlerSpider(scrapy.Spider):
 
         self.start_urls = [line.strip() for line in seed_urls_file if line.strip()]
         for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(
+                url=url, callback=self.parse, cb_kwargs={"curr_hops_away": 0}
+            )
 
-    def parse(self, response) -> Iterable[scrapy.Request]:
-        if self.html_pages_count >= self.num_pages:
+    def parse(self, response, curr_hops_away) -> Iterable[scrapy.Request]:
+        if (
+            self.html_pages_count >= self.max_num_pages
+            or curr_hops_away > self.max_hops_away
+        ):
             return
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -50,7 +55,7 @@ class WebCrawlerSpider(scrapy.Spider):
         self.html_pages_count += 1
         self.visited_urls.add(response.url)
 
-        if self.html_pages_count >= self.num_pages:
+        if self.html_pages_count >= self.max_num_pages:
             return
 
         # Get all links on current HTML page.
@@ -63,4 +68,8 @@ class WebCrawlerSpider(scrapy.Spider):
 
         # Follow (continue crawling) all extracted links.
         for url in extracted_links:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                cb_kwargs={"curr_hops_away": curr_hops_away + 1},
+            )
