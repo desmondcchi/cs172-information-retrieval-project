@@ -68,4 +68,8 @@ class WebCrawlerSpider(scrapy.Spider):
 
         # Follow (continue crawling) all extracted links.
         for url in extracted_links:
-            yield scrapy.Request(url=url, callback=self.parse, cb_kwargs={"curr_hops_away" : curr_hops_away + 1})
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                cb_kwargs={"curr_hops_away": curr_hops_away + 1},
+            )
