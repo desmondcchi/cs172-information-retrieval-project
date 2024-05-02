@@ -8,10 +8,11 @@ class WebCrawlerSpider(scrapy.Spider):
     name = "web_crawler"
 
     def __init__(self, *args, **kwargs):
-        self.seed_file_name = kwargs.get("SEED_FILE_NAME", "")
-        self.num_pages = kwargs.get("NUM_PAGES", 0)
-        self.hops_away = kwargs.get("HOPS_AWAY", 0)
-        self.output_dir_name = kwargs.get("OUTPUT_DIR_NAME", "scraped_html_pages")
+        self.seed_file_name = str(kwargs.get("SEED_FILE_NAME", ""))
+        self.num_pages = int(kwargs.get("NUM_PAGES", 0))
+        self.hops_away = int(kwargs.get("HOPS_AWAY", 0))
+        self.output_dir_name = str(kwargs.get("OUTPUT_DIR_NAME", "scraped_html_pages"))
+        self.html_pages_count = 0
 
     def start_requests(self) -> Iterable[scrapy.Request]:
         seed_urls_file = open(
@@ -26,8 +27,13 @@ class WebCrawlerSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+        if self.html_pages_count >= self.num_pages:
+            return
+
         soup = BeautifulSoup(response.text, "html.parser")
 
+
+        # Write HTML page into a folder.
         title = soup.find("title").text.strip()
         file_name = os.path.abspath(
             os.path.join(
@@ -41,3 +47,16 @@ class WebCrawlerSpider(scrapy.Spider):
         file = open(file_name, "wb")
         file.write(response.body)
         file.close()
+        self.html_pages_count += 1
+
+        # Get all links on current HTML page.
+        all_links = soup.find_all("a")
+        extracted_links = []
+        for link in all_links:
+            href = link.get("href")
+            if href.startswith("http"):
+                extracted_links.append(href)
+
+        # Follow (continue crawling) all extracted links.
+        for url in extracted_links:
+            yield scrapy.Request(url=url, callback=self.parse)
