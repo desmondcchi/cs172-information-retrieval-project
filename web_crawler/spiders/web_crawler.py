@@ -6,14 +6,17 @@ import os
 
 class WebCrawlerSpider(scrapy.Spider):
     name = "web_crawler"
+    start_urls = []
+    allowed_domains = []
 
     def __init__(self, *args, **kwargs):
         self.seed_file_name = str(kwargs.get("SEED_FILE_NAME", ""))
+        self.allowed_domains_file_name = str(
+            kwargs.get("ALLOWED_DOMAINS_FILE_NAME", "")
+        )
         self.max_num_pages = int(kwargs.get("MAX_NUM_PAGES", 0))
         self.max_hops_away = int(kwargs.get("MAX_HOPS_AWAY", 0))
-        self.output_dir_name = str(kwargs.get("OUTPUT_DIR_NAME", "scraped_html_pages"))
         self.html_pages_count = 0
-        self.visited_urls = set()
 
     def start_requests(self) -> Iterable[scrapy.Request]:
         seed_urls_file = open(
@@ -23,8 +26,20 @@ class WebCrawlerSpider(scrapy.Spider):
             "r",
         )
 
-        self.start_urls = [line.strip() for line in seed_urls_file if line.strip()]
-        for url in self.start_urls:
+        allowed_domains_file = open(
+            os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__), f"../../{self.allowed_domains_file_name}"
+                )
+            ),
+            "r",
+        )
+
+        WebCrawlerSpider.start_urls = [line.strip() for line in seed_urls_file if line.strip()]
+        WebCrawlerSpider.allowed_domains = [
+            line.strip() for line in allowed_domains_file if line.strip()
+        ]
+        for url in WebCrawlerSpider.start_urls:
             yield scrapy.Request(
                 url=url, callback=self.parse, cb_kwargs={"curr_hops_away": 0}
             )
@@ -38,22 +53,35 @@ class WebCrawlerSpider(scrapy.Spider):
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Write HTML page into a folder.
         title = soup.find("title").text.strip()
-        file_name = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), f"../../{self.output_dir_name}/{title}.html"
-            )
-        )
+        main_content = soup.find("main").get_text(strip=True)
+        header_content = soup.find("header").get_text(strip=True)
+        footer_content = soup.find("footer").get_text(strip=True)
 
-        if not os.path.exists(os.path.dirname(file_name)):
-            os.makedirs(os.path.dirname(file_name))
+        # Save data into json.
+        yield {
+            "title": title,
+            "url": response.url,
+            "main_content": main_content,
+            "header_content": header_content,
+            "footer_content": footer_content,
+        }
 
-        file = open(file_name, "wb")
-        file.write(response.body)
-        file.close()
+        # Write page content into a folder.
+        # file_name = os.path.abspath(
+        #     os.path.join(
+        #         os.path.dirname(__file__), f"../../{self.output_dir_name}/{title}.html"
+        #     )
+        # )
+
+        # if not os.path.exists(os.path.dirname(file_name)):
+        #     os.makedirs(os.path.dirname(file_name))
+
+        # file = open(file_name, "wb")
+        # file.write(response.body)
+        # file.close()
+
         self.html_pages_count += 1
-        self.visited_urls.add(response.url)
 
         if self.html_pages_count >= self.max_num_pages:
             return

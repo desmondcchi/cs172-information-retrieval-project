@@ -44,9 +44,9 @@ CONCURRENT_REQUESTS = 32
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    "web_crawler.middlewares.WebCrawlerSpiderMiddleware": 543,
-#}
+SPIDER_MIDDLEWARES = {
+   "web_crawler.middlewares.WebCrawlerSpiderMiddleware": 543,
+}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
