@@ -2,7 +2,7 @@ from typing import Iterable
 import scrapy
 from bs4 import BeautifulSoup
 import os
-
+from concurrent.futures import ThreadPoolExecutor
 
 class WebCrawlerSpider(scrapy.Spider):
     name = "web_crawler"
@@ -17,6 +17,7 @@ class WebCrawlerSpider(scrapy.Spider):
         self.max_num_pages = int(kwargs.get("MAX_NUM_PAGES", 0))
         self.max_hops_away = int(kwargs.get("MAX_HOPS_AWAY", 0))
         self.html_pages_count = 0
+        self.executor = ThreadPoolExecutor(max_workers=5)  # adjust max_workers as needed
 
     def start_requests(self) -> Iterable[scrapy.Request]:
         seed_urls_file = open(
@@ -80,11 +81,8 @@ class WebCrawlerSpider(scrapy.Spider):
         # file = open(file_name, "wb")
         # file.write(response.body)
         # file.close()
-
+        
         self.html_pages_count += 1
-
-        if self.html_pages_count >= self.max_num_pages:
-            return
 
         # Get all links on current HTML page.
         all_links = soup.find_all("a")
@@ -94,10 +92,18 @@ class WebCrawlerSpider(scrapy.Spider):
             if href.startswith("http"):
                 extracted_links.append(href)
 
-        # Follow (continue crawling) all extracted links.
+        # Submit tasks to ThreadPoolExecutor
+        futures = []
         for url in extracted_links:
-            yield scrapy.Request(
-                url=url,
-                callback=self.parse,
-                cb_kwargs={"curr_hops_away": curr_hops_away + 1},
+            futures.append(
+                self.executor.submit(self.fetch_url, url, curr_hops_away)
             )
+
+        # Wait for all tasks to complete
+        for future in futures:
+            for request in future.result():
+                yield request
+
+    def fetch_url(self, url, curr_hops_away):
+        response = scrapy.Request(url=url)
+        return self.parse(response, curr_hops_away)
