@@ -18,7 +18,6 @@ class WebCrawlerSpider(scrapy.Spider):
         self.max_hops_away = int(kwargs.get("MAX_HOPS_AWAY", 0))
         self.html_pages_count = 0
 
-    def start_requests(self) -> Iterable[scrapy.Request]:
         seed_urls_file = open(
             os.path.abspath(
                 os.path.join(os.path.dirname(__file__), f"../../{self.seed_file_name}")
@@ -39,6 +38,8 @@ class WebCrawlerSpider(scrapy.Spider):
         WebCrawlerSpider.allowed_domains = [
             line.strip() for line in allowed_domains_file if line.strip()
         ]
+
+    def start_requests(self) -> Iterable[scrapy.Request]:
         for url in WebCrawlerSpider.start_urls:
             yield scrapy.Request(
                 url=url, callback=self.parse, cb_kwargs={"curr_hops_away": 0}
