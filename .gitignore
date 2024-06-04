@@ -1,2 +1,4 @@
 .DS_Store
 scraped_data
+web_crawler/__pycache__
+web_crawler/spiders/__pycache__
