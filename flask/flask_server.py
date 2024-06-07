@@ -36,7 +36,7 @@ def retrieve(storedir, query):
     searchDir = NIOFSDirectory(Paths.get(storedir))
     searcher = IndexSearcher(DirectoryReader.open(searchDir))
     
-    parser = QueryParser('Context', StandardAnalyzer())
+    parser = QueryParser('Main Content', StandardAnalyzer())
     parsed_query = parser.parse(query)
 
     topDocs = searcher.search(parsed_query, 10).scoreDocs
@@ -45,7 +45,7 @@ def retrieve(storedir, query):
         doc = searcher.doc(hit.doc)
         topkdocs.append({
             "score": hit.score,
-            "text": doc.get("Context")
+            "text": doc.get("Main Content")
         })
     return topkdocs
     #print(topkdocs)
@@ -65,7 +65,8 @@ def output():
             return render_template('empty_output.html')
         print(f"this is the query: {query}")
         lucene.getVMEnv().attachCurrentThread()
-        docs = retrieve('indexer/index/', str(query))
+        docs = retrieve('../indexer/index/', str(query))
+        # docs = retrieve('../discovery_test/sample_lucene_index/', str(query))
         print(docs)
         
         return render_template('output_page.html',lucene_output = docs)
