@@ -4,7 +4,6 @@
 import lucene
 import os
 from org.apache.lucene.store import MMapDirectory, NIOFSDirectory
-# from org.apache.lucene.store import SimpleFSDirectory
 from java.nio.file import Paths
 from org.apache.lucene.analysis.standard import StandardAnalyzer
 from org.apache.lucene.document import Document, Field, FieldType
@@ -16,23 +15,11 @@ from flask import request, Flask, render_template
 
 app = Flask(__name__)
 
-# sample_doc = [
-#     {
-#         'title' : 'A',
-#         'context' : 'lucene is a useful tool for searching and information retrieval'
-#         },
-#     {
-#         'title' : 'B',
-#         'context' : 'Bert is a deep learning transformer model for encoding textual data'
-#     },
-#     {
-#         'title' : 'C',
-#         'context' : 'Django is a python web framework for building backend web APIs'
-#     }
-# ]      
-
-def retrieve(storedir, query):
-    # searchDir = SimpleFSDirectory(Paths.get(storedir))
+def retrieve(storedir: str, query: str):
+    """
+    storedir = Directory for stored indexes."
+    query = Query.
+    """
     searchDir = NIOFSDirectory(Paths.get(storedir))
     searcher = IndexSearcher(DirectoryReader.open(searchDir))
     
@@ -49,7 +36,6 @@ def retrieve(storedir, query):
             "title": doc.get("Title")
         })
     return topkdocs
-    #print(topkdocs)
 
 @app.route('/', methods = ['POST', 'GET'])
 def input():
@@ -64,25 +50,12 @@ def output():
         query = form_data['query']
         if query == '':
             return render_template('empty_output.html')
-        print(f"this is the query: {query}")
         lucene.getVMEnv().attachCurrentThread()
         docs = retrieve('../indexer/index/', str(query))
-        # docs = retrieve('../discovery_test/sample_lucene_index/', str(query))
-        # print(docs)
         Query = [{"title" : query}]
         return render_template('output_page.html',lucene_output = Query+docs)
-
-@app.route("/hello")
-def hello():
-    return 'hello!~!!'
-
-@app.route("/abc")
-def abc():
-    return 'hello alien'
-
     
 lucene.initVM(vmargs=['-Djava.awt.headless=true'])
-
     
 if __name__ == "__main__":
     app.run(debug=True)
