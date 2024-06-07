@@ -10,6 +10,7 @@
 <form action="/output" method="POST">
     <h3 style="text-align: center;"> <input type="text" name = "query"/></h3>
 </form>
+
 {% for item in lucene_output[1:] %}
 <h2> Title: {{item['title']}}</h2>
 <h2> Score: {{item['score']}}</h2>
