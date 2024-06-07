@@ -45,7 +45,8 @@ def retrieve(storedir, query):
         doc = searcher.doc(hit.doc)
         topkdocs.append({
             "score": hit.score,
-            "text": doc.get("Main Content")
+            "text": doc.get("Main Content"),
+            "title": doc.get("Title")
         })
     return topkdocs
     #print(topkdocs)
@@ -67,9 +68,9 @@ def output():
         lucene.getVMEnv().attachCurrentThread()
         docs = retrieve('../indexer/index/', str(query))
         # docs = retrieve('../discovery_test/sample_lucene_index/', str(query))
-        print(docs)
-        
-        return render_template('output_page.html',lucene_output = docs)
+        # print(docs)
+        Query = [{"title" : query}]
+        return render_template('output_page.html',lucene_output = Query+docs)
 
 @app.route("/hello")
 def hello():
