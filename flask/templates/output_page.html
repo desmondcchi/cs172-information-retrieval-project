@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Output Page </title>
+</head>
+
+<body>
+
+<h1 style="text-align: center;"> Query: {{ lucene_output[0]['title']}}</h1>
+{% for item in lucene_output[1:] %}
+<h2> Title: {{item['title']}}</h2>
+<h2> Score: {{item['score']}}</h2>
+<h3> Passage: </h3>
+<p>{{item['text'[0:10]] + '...'}}</p>
+{% endfor %}
+
+<form action="/" method = "POST">
+    <p><input type = "submit" value = "Search Again" /></p>
+</form>
+
+</body>
+</html>
