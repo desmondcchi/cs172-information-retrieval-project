@@ -7,15 +7,19 @@
 <body>
 
 <h1 style="text-align: center;"> Query: {{ lucene_output[0]['title']}}</h1>
+<form action="/output" method="POST">
+    <h3 style="text-align: center;"> <input type="text" name = "query"/></h3>
+</form>
+
 {% for item in lucene_output[1:] %}
 <h2> Title: {{item['title']}}</h2>
 <h2> Score: {{item['score']}}</h2>
 <h3> Passage: </h3>
-<p>{{item['text'[0:10]] + '...'}}</p>
+<p>{{item['text']}}</p>
 {% endfor %}
 
 <form action="/" method = "POST">
-    <p><input type = "submit" value = "Search Again" /></p>
+    <h1 style="text-align: center;" ><input type = "submit" value = "Search Again" /></h1>
 </form>
 
 </body>
