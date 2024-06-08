@@ -3,6 +3,7 @@
 
 import lucene
 import os
+import re
 from org.apache.lucene.store import MMapDirectory, NIOFSDirectory
 from java.nio.file import Paths
 from org.apache.lucene.analysis.standard import StandardAnalyzer
@@ -14,6 +15,21 @@ from org.apache.lucene.search.similarities import BM25Similarity
 from flask import request, Flask, render_template
 
 app = Flask(__name__)
+
+
+def get_snippet(query: str, text: str):
+    query_terms = sorted(query.split(), key=len, reverse=True)
+    sentences = re.split("[!.]+", text)
+    query_terms_re = re.compile('|'.join(query_terms), re.IGNORECASE)
+
+    def repl(matched_term):
+        return f"<mark>{matched_term.group(0)}</mark>"
+
+    for sentence in sentences:
+        snippet, matched = query_terms_re.subn(repl, sentence)
+        if matched: return snippet
+
+    return "snippet"
 
 def retrieve(storedir: str, query: str):
     """
@@ -32,6 +48,7 @@ def retrieve(storedir: str, query: str):
         doc = searcher.doc(hit.doc)
         topkdocs.append({
             "score": hit.score,
+            "snippet": get_snippet(query, doc.get("Main Content")),
             "text": doc.get("Main Content"),
             "title": doc.get("Title")
         })
